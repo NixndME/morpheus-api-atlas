@@ -1,0 +1,9 @@
+services:
+  atlas:
+    build: .
+    container_name: morpheus-api-atlas
+    ports:
+      - "2222:2222"
+    # environment:
+    #   - ALLOWED_HOST=morpheus.yourco.com   # optional: restrict relay to one appliance
+    restart: unless-stopped

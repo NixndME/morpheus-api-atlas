@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: morpheus-api-atlas
+  namespace: atlas
+spec:
+  selector: { app: morpheus-api-atlas }
+  ports:
+    - port: 80
+      targetPort: 2222

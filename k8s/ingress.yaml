@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: morpheus-api-atlas
+  namespace: atlas
+  annotations:
+    # cert-manager (uncomment if you use it):
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: morpheusatlas.init0xff.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: morpheus-api-atlas
+                port: { number: 80 }
+  # tls:
+  #   - hosts: [morpheusatlas.init0xff.com]
+  #     secretName: morpheusatlas-tls

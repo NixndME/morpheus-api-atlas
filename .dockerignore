@@ -1,0 +1,6 @@
+.git
+.gitignore
+*.tar.gz
+k8s/
+README.md
+app/data/endpoints.json

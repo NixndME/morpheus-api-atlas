@@ -1,0 +1,24 @@
+# --- never commit secrets or local env ---
+.env
+.env.*
+*.pem
+*.key
+*token*
+atlas-profiles.json
+*.postman_environment.json
+
+# --- build / packaging artifacts ---
+*.tar.gz
+*.zip
+dist/
+node_modules/
+
+# --- editor / OS noise ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- regenerable data (keep endpoints.js committed; json is intermediate) ---
+app/data/endpoints.json

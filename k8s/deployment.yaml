@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: morpheus-api-atlas
+  namespace: atlas
+  labels: { app: morpheus-api-atlas }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: morpheus-api-atlas }
+  template:
+    metadata:
+      labels: { app: morpheus-api-atlas }
+    spec:
+      containers:
+        - name: atlas
+          # Build & push first, e.g.:  ghcr.io/init0xff/morpheus-api-atlas:latest
+          image: nixndme/morpheus-api-atlas:latest
+          ports:
+            - containerPort: 2222
+          env:
+            - name: PORT
+              value: "2222"
+            # Optional: pin the relay to a single Morpheus appliance
+            # - name: ALLOWED_HOST
+            #   value: "morpheus.init0xff.com"
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+          readinessProbe:
+            httpGet: { path: /, port: 2222 }
+            initialDelaySeconds: 3
+          livenessProbe:
+            httpGet: { path: /, port: 2222 }
+            initialDelaySeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
