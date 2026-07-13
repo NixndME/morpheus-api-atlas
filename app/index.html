@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Morpheus API Atlas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#F8FAFC; --surface:#FFFFFF; --primary:#4F46E5; --secondary:#7C3AED;
@@ -15,9 +15,29 @@
   --shadow-hover:0 10px 25px -5px rgba(79,70,229,.15),0 8px 10px -6px rgba(79,70,229,.10);
   --shadow-btn:0 4px 14px 0 rgba(79,70,229,.30);
   --grad:linear-gradient(90deg,#4F46E5,#7C3AED);
-  --sans:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
 }
+:root[data-theme="dark"]{
+  --bg:#09090B; --surface:#18181B; --primary:#818CF8; --secondary:#A78BFA;
+  --text:#EDEDED; --muted:#A1A1AA; --success:#34D399; --border:#27272A;
+  --warn:#FBBF24; --danger:#F87171;
+  --shadow:0 8px 30px rgba(0,0,0,0.4);
+  --shadow-hover:0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+}
+:root[data-theme="dark"] header { background: rgba(9, 9, 11, .85); border-bottom: 1px solid rgba(255,255,255,0.08); }
+:root[data-theme="dark"] .orb1 { background: rgba(129, 140, 248, .15); }
+:root[data-theme="dark"] .orb2 { background: rgba(167, 139, 250, .15); }
+:root[data-theme="dark"] .mcard, :root[data-theme="dark"] .scard, :root[data-theme="dark"] .gcard, :root[data-theme="dark"] .eprow { border: 1px solid rgba(255,255,255,0.08); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] select { background: #18181B; color: #EDEDED; border: 1px solid #27272A; }
+:root[data-theme="dark"] .pill-st.ok, :root[data-theme="dark"] .sf-safe, :root[data-theme="dark"] .out.ok { background: rgba(16,185,129,0.15); color: #34D399; border-color: rgba(16,185,129,0.25); }
+:root[data-theme="dark"] .pill-st.warn, :root[data-theme="dark"] .sf-mutate { background: rgba(245,158,11,0.15); color: #FBBF24; }
+:root[data-theme="dark"] .pill-st.err, :root[data-theme="dark"] .sf-danger, :root[data-theme="dark"] .out.no { background: rgba(239,68,68,0.15); color: #F87171; border-color: rgba(239,68,68,0.25); }
+:root[data-theme="dark"] .epchip, :root[data-theme="dark"] .vchip { background: #27272A; border-color: rgba(255,255,255,0.1); color: #A1A1AA; }
+:root[data-theme="dark"] .envstat { background: #18181B; border-color: rgba(255,255,255,0.1); color: #A1A1AA; }
+:root[data-theme="dark"] .envstat:hover { border-color: rgba(255,255,255,0.2); color: #EDEDED; }
+:root[data-theme="dark"] .term pre, :root[data-theme="dark"] .resp pre { background: #000; border: 1px solid rgba(255,255,255,0.1); }
+:root[data-theme="dark"] .drawer { box-shadow: -12px 0 40px -12px rgba(0,0,0,0.8); border-left: 1px solid rgba(255,255,255,0.1); }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;min-height:100vh;overflow-x:hidden}
@@ -295,6 +315,7 @@ footer{border-top:1px solid var(--border);padding:22px 0 40px;color:var(--muted)
     <div class="gsearch"><span class="ic">⌕</span><input id="gq" placeholder="Search 1,004 endpoints…" autocomplete="off" spellcheck="false"></div>
     <button class="envstat" onclick="showHistory()">🕘 History <span class="badge" id="histbadge">0</span></button>
     <button class="envstat" id="cleanbtn" style="display:none" onclick="showCleanup()">🧹 Cleanup <span class="badge" id="cleanbadge">0</span></button>
+    <button class="envstat" id="darkbtn" onclick="toggleDarkMode()">🌙 Theme</button>
     <button class="envstat" id="envstat" onclick="toggleEnv()"><span class="led"></span><span id="envtxt">Set up environment</span></button>
   </div>
   <div class="envpanel" id="envpanel">

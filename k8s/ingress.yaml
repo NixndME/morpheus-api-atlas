@@ -5,20 +5,8 @@ metadata:
   namespace: morpheus-api-atlas
   labels:
     app: morpheus-api-atlas
-  annotations:
-    # Keep connections alive through Traefik for up to 30 minutes
-    traefik.ingress.kubernetes.io/router.middlewares: ""
-    ingress.kubernetes.io/proxy-read-timeout: "1800"
-    ingress.kubernetes.io/proxy-send-timeout: "1800"
-    traefik.ingress.kubernetes.io/preserve-host: "true"
-    # Disable buffering
-    traefik.ingress.kubernetes.io/buffering: |
-      maxRequestBodyBytes = 0
-      memRequestBodyBytes = 0
-      maxResponseBodyBytes = 0
-      memResponseBodyBytes = 0
-      retryExpression = ""
 spec:
+  ingressClassName: traefik
   rules:
   - host: "morpheusatlas.init0xff.com"
     http:

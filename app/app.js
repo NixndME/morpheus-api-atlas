@@ -1,4 +1,7 @@
 /* ============ Morpheus API Atlas — engine ============ */
+function initTheme(){ if(localStorage.getItem('atlas-theme')==='dark') document.documentElement.setAttribute('data-theme','dark'); }
+function toggleDarkMode(){ const d = document.documentElement; if(d.getAttribute('data-theme')==='dark'){ d.removeAttribute('data-theme'); localStorage.setItem('atlas-theme','light'); } else { d.setAttribute('data-theme','dark'); localStorage.setItem('atlas-theme','dark'); } }
+initTheme();
 const DATA = window.ATLAS_DATA, EPS = DATA.endpoints, MISSIONS = window.MISSIONS;
 document.getElementById('fcount').textContent = DATA.meta.count;
 document.getElementById('gq').placeholder = `Search ${DATA.meta.count.toLocaleString()} endpoints…`;

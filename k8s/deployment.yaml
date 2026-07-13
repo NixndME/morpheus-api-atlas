@@ -18,7 +18,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: atlas
-        image: nixndme/morpheus-api-atlas:1
+        image: nixndme/morpheus-api-atlas:3
         ports:
         - containerPort: 2222
           protocol: TCP
