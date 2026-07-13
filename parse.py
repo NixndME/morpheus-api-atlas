@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
-"""Parse morpheus_api_full.md -> app/data/endpoints.json"""
-import json, re, collections
+"""Parse a Morpheus apidocs scrape (markdown) into the Atlas endpoint data.
 
-SRC = "/mnt/user-data/uploads/morpheus_api_full.md"
-OUT = "/home/claude/atlas/app/data/endpoints.json"
+Usage:
+    python3 parse.py [SOURCE.md] [OUT_DIR]
+
+Defaults:
+    SOURCE.md = ./morpheus_api_full.md
+    OUT_DIR   = ./app/data      (writes endpoints.json and endpoints.js)
+"""
+import json, re, sys, os, collections
+
+SRC = sys.argv[1] if len(sys.argv) > 1 else "morpheus_api_full.md"
+OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "data")
+
+if not os.path.isfile(SRC):
+    sys.exit(f"Source file not found: {SRC}\nUsage: python3 parse.py [SOURCE.md] [OUT_DIR]")
+os.makedirs(OUT_DIR, exist_ok=True)
 
 text = open(SRC, encoding="utf-8", errors="replace").read()
 blocks = re.split(r"\n(?=# )", text)
@@ -21,20 +33,19 @@ def clean_curl(block_text, path):
     curl = re.sub(r"https://changeme", "{{BASE_URL}}", curl, flags=re.I)
     curl = re.sub(r"(--url )\{\{BASE_URL\}\}\S+", r"\1{{BASE_URL}}" + path, curl)
     if "authorization" not in curl.lower():
-        n = curl
-        n = re.sub(r"(--url [^\n]+\\\n)", r"\1  --header 'authorization: Bearer {{TOKEN}}' \\\n", n, count=1)
+        n = re.sub(r"(--url [^\n]+\\\n)", r"\1  --header 'authorization: Bearer {{TOKEN}}' \\\n", curl, count=1)
         if "authorization" not in n.lower():
             n = re.sub(r"(--url [^\n]+)$", r"\1 \\\n  --header 'authorization: Bearer {{TOKEN}}'", n, count=1, flags=re.M)
         curl = n
     return curl
 
-def story(title, method, path):
+def story(method, path):
     verbs = {"GET": "Read-only, safe to run.", "POST": "Creates or triggers something new.",
              "PUT": "Updates existing state.", "DELETE": "Permanently removes it. No undo."}
     extra = verbs.get(method, "")
     if re.search(r"\{\w*[iI]d\}", path):
         extra += " Grab the ID from the matching list call first."
-    return f"{extra}".strip()
+    return extra.strip()
 
 endpoints, seen = [], set()
 for b in blocks:
@@ -53,7 +64,7 @@ for b in blocks:
     group = seg[2] if len(seg) > 2 else "misc"
     endpoints.append({
         "t": title, "m": method, "p": path, "g": group,
-        "s": story(title, method, path),
+        "s": story(method, path),
         "u": (src.group(1) if src else ""),
         "c": clean_curl(b, path) or f"curl --request {method} \\\n  --url {{{{BASE_URL}}}}{path} \\\n  --header 'authorization: Bearer {{{{TOKEN}}}}' \\\n  --header 'accept: application/json'"
     })
@@ -61,7 +72,10 @@ for b in blocks:
 groups = collections.Counter(e["g"] for e in endpoints)
 data = {"meta": {"count": len(endpoints), "groups": len(groups), "version": "9.0"},
         "endpoints": sorted(endpoints, key=lambda e: (e["g"], e["p"], e["m"]))}
-json.dump(data, open(OUT, "w"), separators=(",", ":"))
+
+json_path = os.path.join(OUT_DIR, "endpoints.json")
+js_path = os.path.join(OUT_DIR, "endpoints.js")
+json.dump(data, open(json_path, "w"), separators=(",", ":"))
+open(js_path, "w").write("window.ATLAS_DATA=" + json.dumps(data, separators=(",", ":")) + ";")
 print(f"endpoints={len(endpoints)} groups={len(groups)}")
-print("methods:", dict(collections.Counter(e['m'] for e in endpoints)))
-print("top:", groups.most_common(8))
+print(f"wrote {json_path} and {js_path}")

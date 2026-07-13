@@ -15,7 +15,7 @@ spec:
       containers:
         - name: atlas
           # Build & push first, e.g.:  ghcr.io/init0xff/morpheus-api-atlas:latest
-          image: nixndme/morpheus-api-atlas:latest
+          image: ghcr.io/init0xff/morpheus-api-atlas:latest
           ports:
             - containerPort: 2222
           env:

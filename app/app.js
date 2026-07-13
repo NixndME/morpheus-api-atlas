@@ -237,13 +237,20 @@ function showHistory(){
 }
 function histView(i){ const h=HISTORY[i]; openDrawer(`${h.m} ${h.path}`);
   dMeta.innerHTML = statusPill(h.status,h.ms); showJSON(dBody, h.body||''); }
+let pendingAction=null;
+function executePendingAction(){
+  if(!pendingAction) return;
+  const a=pendingAction; pendingAction=null;
+  const bodyEl=document.getElementById('cbody');
+  execute({m:a.m, p:a.p, body: bodyEl?bodyEl.value:(a.body||null), _resolvedBody:true}, null, null);
+}
 function histRerun(i){ const h=HISTORY[i];
-  if(h.m==='GET') return execute({m:h.m,p:h.path},null,null);
+  if(h.m==='GET') return execute({m:h.m,p:h.path,_resolvedBody:true},null,null);
   openDrawer(`${h.m} ${h.path}`);
-  pendingRun=null;
+  pendingRun=null; pendingAction={m:h.m,p:h.path,body:h.reqBody};
   dBody.innerHTML = `<div class="confirm"><p class="cwarn">Re-run will execute against <b>${esc(VARS.BASE_URL)}</b> again.</p>
     ${h.reqBody?`<p class="clbl">Payload:</p><textarea id="cbody" spellcheck="false">${esc(h.reqBody)}</textarea>`:''}
-    <div class="cbtns"><button class="tbtn pri" onclick='execute({m:${JSON.stringify(h.m)},p:${JSON.stringify(h.path)},body:document.getElementById("cbody")?document.getElementById("cbody").value:null,_resolvedBody:true},null,null)'>Execute ${h.m}</button>
+    <div class="cbtns"><button class="tbtn pri" onclick="executePendingAction()">Execute ${esc(h.m)}</button>
     <button class="tbtn sec" onclick="closeDrawer()">Cancel</button></div></div>`;
 }
 function showCleanup(){
@@ -259,9 +266,15 @@ function showCleanup(){
 function cleanDelete(i){
   const c=CREATED[i];
   openDrawer(`DELETE ${c.delPath}`);
+  pendingAction=null;
   dBody.innerHTML = `<div class="confirm"><p class="cwarn">Permanently delete <b>${esc(c.label)}</b> on <b>${esc(VARS.BASE_URL)}</b>? No undo.</p>
-    <div class="cbtns"><button class="tbtn pri" onclick='CREATED.splice(${i},1);updateBadges();execute({m:"DELETE",p:${JSON.stringify(c.delPath)}},null,null)'>Execute DELETE</button>
+    <div class="cbtns"><button class="tbtn pri" onclick="cleanConfirm(${i})">Execute DELETE</button>
     <button class="tbtn sec" onclick="closeDrawer()">Cancel</button></div></div>`;
+}
+function cleanConfirm(i){
+  const c=CREATED[i]; if(!c) return;
+  CREATED.splice(i,1); updateBadges();
+  execute({m:'DELETE', p:c.delPath, _resolvedBody:true}, null, null);
 }
 
 /* ============ ENVIRONMENT PROFILES ============ */
@@ -313,8 +326,10 @@ function genCurl(r){
   return c;
 }
 function genPy(r){
-  let s=`import requests\n\nr = requests.${r.m.toLowerCase()}(\n    "{{BASE_URL}}${r.p}",\n    headers={"authorization": "Bearer {{TOKEN}}"},`;
-  if(r.body) s+=`\n    json=${r.body},`;
+  let s=`import requests\n\nr = requests.${r.m.toLowerCase()}(\n    "{{BASE_URL}}${r.p}",\n    headers={\n        "authorization": "Bearer {{TOKEN}}",`;
+  if(r.body) s+=`\n        "content-type": "application/json",`;
+  s+=`\n    },`;
+  if(r.body) s+=`\n    data='''${r.body}''',  # raw JSON string: true/false/null stay valid`;
   s+=`\n    verify=False,  # self-signed lab cert\n)\nprint(r.status_code)\nprint(r.json())`;
   return s;
 }
@@ -352,7 +367,8 @@ function exportPostman(mid){
       request:{ method:r.m,
         header:[{key:'authorization',value:'Bearer {{TOKEN}}'},...(r.body?[{key:'content-type',value:'application/json'}]:[])],
         url:{ raw:'{{BASE_URL}}'+r.p, host:['{{BASE_URL}}'], path:pth.replace(/^\//,'').split('/'),
-          query:(q||'').split('&').filter(Boolean).map(kv=>{const [k,v]=kv.split('=');return{key:k,value:v||''}}) },
+          query:(q||'').split('&').filter(Boolean).map(kv=>{const idx=kv.indexOf('=');
+            return idx<0?{key:kv,value:''}:{key:kv.slice(0,idx),value:kv.slice(idx+1)}}) },
         ...(r.body?{body:{mode:'raw',raw:r.body,options:{raw:{language:'json'}}}}:{}) } };
   });
   const col={ info:{ name:`Morpheus Atlas — Mission ${m.id}: ${m.title}`,

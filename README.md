@@ -84,10 +84,12 @@ Browser UI ──POST /run──> Atlas container ──HTTPS──> Morpheus ap
 ```
 
 Relay properties:
-- Forwards **only `/api/*` paths** and only GET / POST / PUT / DELETE, 30 s timeout.
+- Forwards **only `/api/*` paths**, only GET / POST / PUT / DELETE, only `http`/`https` base URLs, 30 s timeout.
+- Requests to link-local / cloud-metadata addresses (169.254.x.x, metadata.google.internal) are blocked.
 - Accepts self-signed appliance certificates.
 - The bearer token is passed through **per request** — never stored, never logged server-side.
-- Optional `ALLOWED_HOST` env var pins the relay to a single appliance hostname.
+- Optional `ALLOWED_HOST` env var pins the relay to a single appliance hostname — **strongly recommended**
+  for any shared deployment, since an unpinned relay can reach other hosts on its network.
 
 **Deployment guidance:** intended for lab / internal / DMZ use. Anyone who can reach the Atlas port can relay
 API calls *using their own token* — do not expose it to the internet without an auth layer in front

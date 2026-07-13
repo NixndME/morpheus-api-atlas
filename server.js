@@ -11,7 +11,7 @@ function serveStatic(req, res){
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/') p = '/index.html';
   const file = path.normalize(path.join(ROOT, p));
-  if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  if (file !== ROOT && !file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, {'content-type': MIME[path.extname(file)] || 'application/octet-stream'});
@@ -28,23 +28,34 @@ function relay(req, res){
     const { base, method, apiPath, token, body } = j;
     let target;
     try { target = new URL(apiPath, base); } catch { return bad(res, 400, 'invalid base URL'); }
+    if (!['http:','https:'].includes(target.protocol)) return bad(res, 400, 'only http/https base URLs are supported');
     if (!target.pathname.startsWith('/api/')) return bad(res, 400, 'only /api/* paths are relayed');
     if (!['GET','POST','PUT','DELETE'].includes(method)) return bad(res, 400, 'method not allowed');
     if (ALLOWED_HOST && target.hostname !== ALLOWED_HOST) return bad(res, 403, `relay pinned to ${ALLOWED_HOST}`);
+    // SSRF hardening: never relay to cloud metadata / link-local targets
+    const hn = target.hostname.toLowerCase();
+    if (hn === 'metadata.google.internal' || hn === 'metadata' ||
+        /^169\.254\./.test(hn) || hn === '[fd00:ec2::254]' || hn === 'fd00:ec2::254')
+      return bad(res, 403, 'relay to link-local/metadata addresses is blocked');
 
     const lib = target.protocol === 'http:' ? http : https;
     const started = Date.now();
     const opts = { method, headers: { 'authorization': 'Bearer ' + (token||''), 'accept': 'application/json' },
                    rejectUnauthorized: false, timeout: 30000 };
     if (body) opts.headers['content-type'] = 'application/json';
-    const up = lib.request(target, opts, r => {
+    let up;
+    try {
+      up = lib.request(target, opts, r => {
       let out = '';
       r.on('data', c => out += c);
       r.on('end', () => {
         res.writeHead(200, {'content-type':'application/json'});
         res.end(JSON.stringify({ status: r.statusCode, ms: Date.now()-started, body: out.slice(0, 800000) }));
       });
-    });
+      });
+    } catch (e) {
+      return bad(res, 400, 'could not open request: ' + (e.message || e.code));
+    }
     up.on('timeout', () => { up.destroy(); res.writeHead(200, {'content-type':'application/json'});
       res.end(JSON.stringify({ status: 0, ms: Date.now()-started, error: 'timeout after 30s' })); });
     up.on('error', e => { res.writeHead(200, {'content-type':'application/json'});
