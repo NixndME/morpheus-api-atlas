@@ -2,22 +2,31 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: morpheus-api-atlas
-  namespace: atlas
+  namespace: morpheus-api-atlas
+  labels:
+    app: morpheus-api-atlas
   annotations:
-    # cert-manager (uncomment if you use it):
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Keep connections alive through Traefik for up to 30 minutes
+    traefik.ingress.kubernetes.io/router.middlewares: ""
+    ingress.kubernetes.io/proxy-read-timeout: "1800"
+    ingress.kubernetes.io/proxy-send-timeout: "1800"
+    traefik.ingress.kubernetes.io/preserve-host: "true"
+    # Disable buffering
+    traefik.ingress.kubernetes.io/buffering: |
+      maxRequestBodyBytes = 0
+      memRequestBodyBytes = 0
+      maxResponseBodyBytes = 0
+      memResponseBodyBytes = 0
+      retryExpression = ""
 spec:
-  ingressClassName: nginx
   rules:
-    - host: morpheusatlas.init0xff.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: morpheus-api-atlas
-                port: { number: 80 }
-  # tls:
-  #   - hosts: [morpheusatlas.init0xff.com]
-  #     secretName: morpheusatlas-tls
+  - host: "morpheusatlas.init0xff.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: morpheus-api-atlas-svc
+            port:
+              number: 8743
